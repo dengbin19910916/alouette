@@ -1,35 +1,50 @@
 package io.xxx.alouette.entity;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
-import java.util.List;
+import javax.persistence.*;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Data
-@EqualsAndHashCode(callSuper = true)
-@Entity(name = "\"order\"")
-public class OrderEntity extends BaseOrderEntity {
+@MappedSuperclass
+public abstract class OrderEntity implements Serializable {
 
-    @OneToMany(mappedBy = "order", cascade = CascadeType.ALL)
-    private List<ItemEntity> items;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    protected Long id;
+    protected Integer giftNum;
+    protected BigDecimal payableAmount;
+    protected BigDecimal paidAmount;
+    @ManyToOne
+    protected PaymentMethodEntity paymentMethod;
+    protected LocalDateTime createdTime;
+    protected LocalDateTime updatedTime;
+    protected LocalDateTime paidTime;
+    @Enumerated
+    protected Status status;
 
     @Data
-    @EqualsAndHashCode(callSuper = true)
-    @Entity(name = "order_item")
-    public static class ItemEntity extends BaseOrderEntity.ItemEntity {
+    @MappedSuperclass
+    public abstract static class ItemEntity implements Serializable {
 
-        @ManyToOne(cascade = CascadeType.ALL)
-        private OrderEntity order;
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        protected Long id;
+        @ManyToOne
+        @JoinColumn(name = "sku_id", referencedColumnName = "skuId")
+        protected ProductEntity product;
+        protected BigDecimal tagPrice;
+        protected Integer skuNum;
+        protected Integer serial;
+        protected LocalDateTime createdTime;
+        protected LocalDateTime updatedTime;
 
         @Override
         public String toString() {
             return "ItemEntity{" +
-                    "id=" + id +
-                    ", product=" + product +
+                    "product=" + product +
                     ", tagPrice=" + tagPrice +
                     ", skuNum=" + skuNum +
                     ", serial=" + serial +
@@ -37,5 +52,11 @@ public class OrderEntity extends BaseOrderEntity {
                     ", updatedTime=" + updatedTime +
                     '}';
         }
+    }
+
+    public enum Status {
+        UNPAID,
+        PAID,
+        CANCELED
     }
 }

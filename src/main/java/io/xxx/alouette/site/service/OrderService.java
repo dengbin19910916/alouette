@@ -40,26 +40,26 @@ public class OrderService {
     @Transactional
     public Long create(OrderRequest orderRequest) {
         LocalDateTime now = LocalDateTime.now();
-        OrderEntity orderEntity = new OrderEntity();
-        orderEntity.setGiftNum(orderRequest.getGiftNum());
-        orderEntity.setStatus(BaseOrderEntity.Status.UNPAID);
-        orderEntity.setCreatedTime(now);
-        orderEntity.setUpdatedTime(now);
+        TradeOrderEntity tradeOrderEntity = new TradeOrderEntity();
+        tradeOrderEntity.setGiftNum(orderRequest.getGiftNum());
+        tradeOrderEntity.setStatus(OrderEntity.Status.UNPAID);
+        tradeOrderEntity.setCreatedTime(now);
+        tradeOrderEntity.setUpdatedTime(now);
 
-        orderEntity.setItems(orderRequest.getItems().stream()
+        tradeOrderEntity.setItems(orderRequest.getItems().stream()
                 .map(itemRequest -> {
-                    OrderEntity.ItemEntity itemEntity = new OrderEntity.ItemEntity();
+                    TradeOrderEntity.ItemEntity itemEntity = new TradeOrderEntity.ItemEntity();
                     BeanUtils.copyProperties(itemRequest, itemEntity);
 
                     Optional<ProductEntity> productEntity = productRepository.findBySkuId(itemRequest.getSkuId());
                     if (productEntity.isEmpty()) {
                         throw new RuntimeException(String.format("商品[%s]不存在", itemRequest.getSkuId()));
                     }
-                    itemEntity.setOrder(orderEntity);
+                    itemEntity.setTradeOrder(tradeOrderEntity);
                     itemEntity.setProduct(productEntity.get());
                     itemEntity.setTagPrice(productEntity.get().getTagPrice());
-                    itemEntity.setCreatedTime(orderEntity.getCreatedTime());
-                    itemEntity.setUpdatedTime(orderEntity.getUpdatedTime());
+                    itemEntity.setCreatedTime(tradeOrderEntity.getCreatedTime());
+                    itemEntity.setUpdatedTime(tradeOrderEntity.getUpdatedTime());
 
                     Optional<StockEntity> stockEntity = stockRepository.findByProduct(itemEntity.getProduct());
                     if (stockEntity.isEmpty() || stockEntity.get().getAmount() == 0) {
@@ -78,16 +78,16 @@ public class OrderService {
                     return itemEntity;
                 })
                 .collect(Collectors.toList()));
-        orderEntity.setPayableAmount(orderEntity.getItems().stream()
+        tradeOrderEntity.setPayableAmount(tradeOrderEntity.getItems().stream()
                 .map(itemEntity -> itemEntity.getTagPrice().multiply(new BigDecimal(itemEntity.getSkuNum())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add));
 
-        return orderRepository.save(orderEntity).getId();
+        return orderRepository.save(tradeOrderEntity).getId();
     }
 
     @Transactional
     public void pay(PaymentRequest paymentRequest) {
-        Optional<OrderEntity> orderEntity = orderRepository.findById(paymentRequest.getOrderId());
+        Optional<TradeOrderEntity> orderEntity = orderRepository.findById(paymentRequest.getOrderId());
         if (orderEntity.isEmpty()) {
             throw new RuntimeException(String.format("订单[%s]不存在", paymentRequest.getOrderId()));
         }
@@ -101,25 +101,25 @@ public class OrderService {
         }
         orderEntity.get().setPaymentMethod(paymentMethodEntity.get());
         orderEntity.get().setPaidTime(LocalDateTime.now());
-        orderEntity.get().setStatus(BaseOrderEntity.Status.PAID);
+        orderEntity.get().setStatus(OrderEntity.Status.PAID);
         finish(orderEntity.get());
     }
 
     @Transactional
     public void cancel(Long orderId) {
-        Optional<OrderEntity> orderEntity = orderRepository.findById(orderId);
+        Optional<TradeOrderEntity> orderEntity = orderRepository.findById(orderId);
         if (orderEntity.isEmpty()) {
             throw new RuntimeException(String.format("订单[%s]不存在", orderId));
         }
 
-        orderEntity.get().setStatus(BaseOrderEntity.Status.CANCELED);
+        orderEntity.get().setStatus(OrderEntity.Status.CANCELED);
         finish(orderEntity.get());
     }
 
-    private void finish(OrderEntity orderEntity) {
+    private void finish(TradeOrderEntity tradeOrderEntity) {
         HistoryOrderEntity historyOrderEntity = new HistoryOrderEntity();
-        BeanUtils.copyProperties(orderEntity, historyOrderEntity);
-        historyOrderEntity.setItems(orderEntity.getItems().stream()
+        BeanUtils.copyProperties(tradeOrderEntity, historyOrderEntity);
+        historyOrderEntity.setItems(tradeOrderEntity.getItems().stream()
                 .map(itemEntity -> {
                     HistoryOrderEntity.ItemEntity historyItemEntity = new HistoryOrderEntity.ItemEntity();
                     BeanUtils.copyProperties(itemEntity, historyItemEntity);
@@ -129,6 +129,6 @@ public class OrderService {
                 })
                 .collect(Collectors.toList()));
         historyOrderRepository.save(historyOrderEntity);
-        orderRepository.deleteById(orderEntity.getId());
+        orderRepository.deleteById(tradeOrderEntity.getId());
     }
 }

@@ -16,7 +16,7 @@ public class PaymentMethodEntity {
     private String name;
 
     @OneToMany(mappedBy = "paymentMethod")
-    private List<OrderEntity> orders;
+    private List<TradeOrderEntity> tradeOrders;
 
     @OneToMany(mappedBy = "paymentMethod")
     private List<HistoryOrderEntity> historyOrders;

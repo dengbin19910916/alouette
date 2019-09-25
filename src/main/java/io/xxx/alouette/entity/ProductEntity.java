@@ -25,7 +25,7 @@ public class ProductEntity implements Serializable {
     private BigDecimal tagPrice;
 
     @OneToMany(mappedBy = "product")
-    private List<OrderEntity.ItemEntity> orderItems;
+    private List<TradeOrderEntity.ItemEntity> tradeOrderItems;
 
     @OneToMany(mappedBy = "product")
     private List<HistoryOrderEntity.ItemEntity> historyOrderItems;

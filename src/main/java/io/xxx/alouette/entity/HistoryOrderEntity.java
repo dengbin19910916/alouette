@@ -12,7 +12,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity(name = "history_order")
-public class HistoryOrderEntity extends BaseOrderEntity {
+public class HistoryOrderEntity extends OrderEntity {
 
     @OneToMany(mappedBy = "historyOrder", cascade = CascadeType.ALL)
     private List<ItemEntity> items;
@@ -20,7 +20,7 @@ public class HistoryOrderEntity extends BaseOrderEntity {
     @Data
     @EqualsAndHashCode(callSuper = true)
     @Entity(name = "history_order_item")
-    public static class ItemEntity extends BaseOrderEntity.ItemEntity {
+    public static class ItemEntity extends OrderEntity.ItemEntity {
 
         @ManyToOne(cascade = CascadeType.ALL)
         private HistoryOrderEntity historyOrder;

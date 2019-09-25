@@ -1,0 +1,22 @@
+spring:
+  application:
+    name: @project.artifactId@
+  profiles:
+    active: local
+  config:
+    location:
+server:
+  port: 9090
+---
+spring:
+  profiles: local
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: jdbc:postgresql://localhost:5432/alouette
+  flyway:
+    enabled: false
+  jpa:
+    show-sql: true
+    database: postgresql
+    hibernate:
+      ddl-auto: update
